@@ -39,13 +39,21 @@ app.get('/sse', (req, res) => {
   });
 });
 
-// MCP messages endpoint (POST)
-app.post('/messages', (req, res) => {
-  console.log('MCP POST Request:', JSON.stringify(req.body, null, 2));
-
 // MCP messages endpoint (GET) - temporary for debugging
 app.get('/messages', (req, res) => {
   console.log('MCP GET Request - This should not happen:', req.query);
+  res.json({
+    error: 'GET method not supported for /messages. Use POST instead.',
+    received_method: 'GET',
+    expected_method: 'POST',
+    query_params: req.query,
+    headers: req.headers
+  });
+});
+
+// MCP messages endpoint (POST)
+app.post('/messages', (req, res) => {
+  console.log('MCP POST Request:', JSON.stringify(req.body, null, 2));
   
   const request = req.body;
   
