@@ -4,7 +4,7 @@
   "description": "Brave MCP Server for n8n",
   "main": "index.js",
   "scripts": {
-    "start": "npx @modelcontextprotocol/server-brave-search"
+    "start": "npx @modelcontextprotocol/server-brave-search --transport sse --port 3000"
   },
   "dependencies": {
     "@modelcontextprotocol/server-brave-search": "^0.5.0"
