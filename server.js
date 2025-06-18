@@ -12,7 +12,7 @@ app.get('/sse', (req, res) => {
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*'
   });
-
+  
   // Send MCP endpoint info
   res.write(`data: /sse\n\n`);
   
@@ -20,14 +20,14 @@ app.get('/sse', (req, res) => {
   const keepAlive = setInterval(() => {
     res.write(`data: \n\n`);
   }, 30000);
-
+  
   req.on('close', () => {
     clearInterval(keepAlive);
   });
 });
 
-// MCP messages endpoint
-app.post('/sse', (req, res) => {
+// MCP messages endpoint - CAMBIADO DE /sse A /messages
+app.post('/messages', (req, res) => {
   console.log('MCP Request:', JSON.stringify(req.body, null, 2));
   
   const request = req.body;
