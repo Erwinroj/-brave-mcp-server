@@ -4,6 +4,19 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Add CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // SSE endpoint
 app.get('/sse', (req, res) => {
   res.writeHead(200, {
@@ -26,9 +39,13 @@ app.get('/sse', (req, res) => {
   });
 });
 
-// MCP messages endpoint - CAMBIADO DE /sse A /messages
+// MCP messages endpoint (POST)
 app.post('/messages', (req, res) => {
-  console.log('MCP Request:', JSON.stringify(req.body, null, 2));
+  console.log('MCP POST Request:', JSON.stringify(req.body, null, 2));
+
+// MCP messages endpoint (GET) - temporary for debugging
+app.get('/messages', (req, res) => {
+  console.log('MCP GET Request - This should not happen:', req.query);
   
   const request = req.body;
   
