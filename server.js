@@ -48,7 +48,6 @@ app.get('/sse', (req, res) => {
   // Immediate response for Railway
   res.write('event: connection\n');
   res.write('data: {"type":"connection","status":"connected"}\n\n');
-  res.flush();
   
   // Add to active connections
   activeConnections.add(res);
@@ -59,7 +58,6 @@ app.get('/sse', (req, res) => {
       try {
         res.write('event: ping\n');
         res.write('data: {"type":"ping","timestamp":' + Date.now() + '}\n\n');
-        res.flush();
       } catch (err) {
         console.log('Keep-alive error:', err.message);
         clearInterval(keepAlive);
@@ -73,7 +71,6 @@ app.get('/sse', (req, res) => {
     if (!res.destroyed && res.writable) {
       try {
         res.write(':\n\n'); // Comment-only heartbeat
-        res.flush();
       } catch (err) {
         console.log('Heartbeat error:', err.message);
         clearInterval(heartbeat);
