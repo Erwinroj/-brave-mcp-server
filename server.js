@@ -9,12 +9,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
+  next();
 });
 
 // Global request logger
@@ -27,56 +22,42 @@ app.use((req, res, next) => {
   next();
 });
 
-// Store active SSE connections
+// Track active SSE connections
 const activeConnections = new Set();
 
-// SSE endpoint - Railway-optimized
+// SSE endpoint
 app.get('/sse', (req, res) => {
-  console.log('=== SSE Connection Initiated ===');
+  console.log('SSE Connection Initiated');
   
-  // Railway-specific SSE headers
+  // Set SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
-    'X-Content-Type-Options': 'nosniff',
-    'Transfer-Encoding': 'chunked'
+    'X-Accel-Buffering': 'no'
   });
 
-  // Immediate response for Railway
-  res.write('event: connection\n');
-  res.write('data: {"type":"connection","status":"connected"}\n\n');
+  // Send MCP initialization message that client expects
+  res.write('event: message\n');
+  res.write('data: {"jsonrpc":"2.0","method":"notifications/initialized"}\n\n');
   
   // Add to active connections
   activeConnections.add(res);
   
   // More frequent keep-alive for Railway (every 10 seconds)
   const keepAlive = setInterval(() => {
-    if (!res.destroyed && res.writable) {
-      try {
-        res.write('event: ping\n');
-        res.write('data: {"type":"ping","timestamp":' + Date.now() + '}\n\n');
-      } catch (err) {
-        console.log('Keep-alive error:', err.message);
-        clearInterval(keepAlive);
-        activeConnections.delete(res);
-      }
+    if (!res.headersSent) {
+      console.log('SSE keep-alive sent');
+      res.write('event: ping\n');
+      res.write('data: {"type":"ping"}\n\n');
     }
   }, 10000);
 
-  // Heartbeat for Railway connection stability
+  // Additional heartbeat every 5 seconds
   const heartbeat = setInterval(() => {
-    if (!res.destroyed && res.writable) {
-      try {
-        res.write(':\n\n'); // Comment-only heartbeat
-      } catch (err) {
-        console.log('Heartbeat error:', err.message);
-        clearInterval(heartbeat);
-        clearInterval(keepAlive);
-        activeConnections.delete(res);
-      }
+    if (!res.headersSent) {
+      res.write(': heartbeat\n\n');
     }
   }, 5000);
 
@@ -89,30 +70,21 @@ app.get('/sse', (req, res) => {
   });
 
   req.on('error', (err) => {
-    console.log('SSE connection error:', err.message);
+    console.log('SSE connection error:', err);
     clearInterval(keepAlive);
     clearInterval(heartbeat);
     activeConnections.delete(res);
   });
 
-  // Railway-specific: Handle aborted connections
   req.on('aborted', () => {
     console.log('SSE connection aborted');
     clearInterval(keepAlive);
     clearInterval(heartbeat);
     activeConnections.delete(res);
   });
-
-  // Additional cleanup for Railway
-  res.on('close', () => {
-    console.log('SSE response closed');
-    clearInterval(keepAlive);
-    clearInterval(heartbeat);
-    activeConnections.delete(res);
-  });
 });
 
-// MCP JSON-RPC endpoint
+// MCP messages endpoint (POST)
 app.post('/messages', (req, res) => {
   console.log('=== MCP JSON-RPC Request ===');
   console.log('Body:', JSON.stringify(req.body, null, 2));
@@ -126,151 +98,116 @@ app.post('/messages', (req, res) => {
       id: request.id || null,
       error: {
         code: -32600,
-        message: 'Invalid Request - Missing or invalid jsonrpc version'
+        message: 'Invalid Request - missing or invalid jsonrpc field'
       }
     });
   }
 
-  // Handle different MCP methods
-  try {
-    switch (request.method) {
-      case 'initialize':
-        console.log('Handling MCP initialize');
-        res.json({
-          jsonrpc: '2.0',
-          id: request.id,
-          result: {
-            protocolVersion: '2024-11-05',
-            capabilities: {
-              tools: {},
-              resources: {},
-              prompts: {}
-            },
-            serverInfo: {
-              name: 'brave-mcp-server',
-              version: '1.0.0'
-            }
-          }
-        });
-        break;
-
-      case 'notifications/initialized':
-        console.log('Handling MCP initialized notification');
-        // Notifications don't require a response
-        res.status(200).end();
-        break;
-
-      case 'tools/list':
-        console.log('Handling MCP tools/list');
-        res.json({
-          jsonrpc: '2.0',
-          id: request.id,
-          result: {
-            tools: [{
-              name: 'brave_search',
-              description: 'Search the web using Brave Search API',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  query: {
-                    type: 'string',
-                    description: 'Search query'
-                  }
-                },
-                required: ['query']
-              }
-            }]
-          }
-        });
-        break;
-
-      case 'tools/call':
-        console.log('Handling MCP tools/call');
-        const toolName = request.params?.name;
-        const toolArgs = request.params?.arguments || {};
-        
-        if (toolName === 'brave_search') {
-          // Simulate search results (you can implement real Brave API here)
-          res.json({
-            jsonrpc: '2.0',
-            id: request.id,
-            result: {
-              content: [{
-                type: 'text',
-                text: `Search results for: "${toolArgs.query}"\n\n1. Sample result 1 - This is a simulated search result\n2. Sample result 2 - Another simulated result\n3. Sample result 3 - Third simulated result`
-              }],
-              isError: false
-            }
-          });
-        } else {
-          res.json({
-            jsonrpc: '2.0',
-            id: request.id,
-            error: {
-              code: -32601,
-              message: `Unknown tool: ${toolName}`
-            }
-          });
+  if (request.method === 'initialize') {
+    res.json({
+      jsonrpc: '2.0',
+      id: request.id,
+      result: {
+        protocolVersion: '2024-11-05',
+        capabilities: {
+          tools: {}
+        },
+        serverInfo: {
+          name: 'brave-mcp-server',
+          version: '1.0.0'
         }
-        break;
-
-      case 'ping':
-        console.log('Handling MCP ping');
-        res.json({
-          jsonrpc: '2.0',
-          id: request.id,
-          result: {}
-        });
-        break;
-
-      default:
-        console.log('Unknown MCP method:', request.method);
-        res.json({
-          jsonrpc: '2.0',
-          id: request.id,
-          error: {
-            code: -32601,
-            message: `Method not found: ${request.method}`
+      }
+    });
+  } else if (request.method === 'notifications/initialized') {
+    // Client confirming initialization - no response needed
+    console.log('MCP initialization confirmed by client');
+    res.status(200).end();
+  } else if (request.method === 'tools/list') {
+    res.json({
+      jsonrpc: '2.0',
+      id: request.id,
+      result: {
+        tools: [{
+          name: 'brave_search',
+          description: 'Search the web using Brave Search API',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search query'
+              }
+            },
+            required: ['query']
           }
-        });
+        }]
+      }
+    });
+  } else if (request.method === 'tools/call') {
+    // Handle tool execution
+    const toolName = request.params?.name;
+    const toolArgs = request.params?.arguments;
+    
+    if (toolName === 'brave_search') {
+      res.json({
+        jsonrpc: '2.0',
+        id: request.id,
+        result: {
+          content: [{
+            type: 'text',
+            text: `Brave search results for: ${toolArgs?.query || 'undefined query'}`
+          }]
+        }
+      });
+    } else {
+      res.json({
+        jsonrpc: '2.0',
+        id: request.id,
+        error: {
+          code: -32601,
+          message: `Unknown tool: ${toolName}`
+        }
+      });
     }
-  } catch (error) {
-    console.error('Error processing MCP request:', error);
+  } else if (request.method === 'ping') {
+    res.json({
+      jsonrpc: '2.0',
+      id: request.id,
+      result: {}
+    });
+  } else {
     res.json({
       jsonrpc: '2.0',
       id: request.id,
       error: {
-        code: -32603,
-        message: 'Internal error',
-        data: error.message
+        code: -32601,
+        message: `Method not found: ${request.method}`
       }
     });
   }
 });
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'Brave MCP Server is running!',
-    protocol: 'MCP 2024-11-05',
-    endpoints: {
-      sse: '/sse',
-      messages: '/messages'
-    },
-    activeConnections: activeConnections.size
+// MCP messages endpoint (GET) - temporary for debugging
+app.get('/messages', (req, res) => {
+  console.log('MCP GET Request - This should not happen:', req.query);
+  res.json({
+    error: 'GET method not supported for /messages. Use POST instead.',
+    note: 'This endpoint expects JSON-RPC 2.0 POST requests',
+    availableMethods: ['initialize', 'tools/list', 'tools/call', 'ping']
   });
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Shutting down gracefully...');
-  activeConnections.forEach(res => {
-    if (!res.destroyed) {
-      res.write('data: {"type":"shutdown"}\n\n');
-      res.end();
-    }
-  });
-  process.exit(0);
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ status: 'Brave MCP Server is running!' });
+});
+
+// Handle OPTIONS requests for CORS
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.sendStatus(200);
 });
 
 app.listen(port, () => {
