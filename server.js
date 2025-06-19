@@ -30,42 +30,87 @@ app.use((req, res, next) => {
 // Store active SSE connections
 const activeConnections = new Set();
 
-// SSE endpoint - Main MCP connection endpoint
+// SSE endpoint - Railway-optimized
 app.get('/sse', (req, res) => {
   console.log('=== SSE Connection Initiated ===');
   
-  // Set SSE headers
+  // Railway-specific SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'X-Accel-Buffering': 'no' // Disable nginx buffering
+    'X-Accel-Buffering': 'no', // Disable nginx buffering
+    'X-Content-Type-Options': 'nosniff',
+    'Transfer-Encoding': 'chunked'
   });
 
-  // Send initial SSE data
+  // Immediate response for Railway
+  res.write('event: connection\n');
   res.write('data: {"type":"connection","status":"connected"}\n\n');
+  res.flush();
   
   // Add to active connections
   activeConnections.add(res);
   
-  // Keep alive ping every 30 seconds
+  // More frequent keep-alive for Railway (every 10 seconds)
   const keepAlive = setInterval(() => {
-    if (!res.destroyed) {
-      res.write('data: {"type":"ping"}\n\n');
+    if (!res.destroyed && res.writable) {
+      try {
+        res.write('event: ping\n');
+        res.write('data: {"type":"ping","timestamp":' + Date.now() + '}\n\n');
+        res.flush();
+      } catch (err) {
+        console.log('Keep-alive error:', err.message);
+        clearInterval(keepAlive);
+        activeConnections.delete(res);
+      }
     }
-  }, 30000);
+  }, 10000);
+
+  // Heartbeat for Railway connection stability
+  const heartbeat = setInterval(() => {
+    if (!res.destroyed && res.writable) {
+      try {
+        res.write(':\n\n'); // Comment-only heartbeat
+        res.flush();
+      } catch (err) {
+        console.log('Heartbeat error:', err.message);
+        clearInterval(heartbeat);
+        clearInterval(keepAlive);
+        activeConnections.delete(res);
+      }
+    }
+  }, 5000);
 
   // Handle client disconnect
   req.on('close', () => {
-    console.log('SSE connection closed');
+    console.log('SSE connection closed by client');
     clearInterval(keepAlive);
+    clearInterval(heartbeat);
     activeConnections.delete(res);
   });
 
   req.on('error', (err) => {
-    console.log('SSE connection error:', err);
+    console.log('SSE connection error:', err.message);
     clearInterval(keepAlive);
+    clearInterval(heartbeat);
+    activeConnections.delete(res);
+  });
+
+  // Railway-specific: Handle aborted connections
+  req.on('aborted', () => {
+    console.log('SSE connection aborted');
+    clearInterval(keepAlive);
+    clearInterval(heartbeat);
+    activeConnections.delete(res);
+  });
+
+  // Additional cleanup for Railway
+  res.on('close', () => {
+    console.log('SSE response closed');
+    clearInterval(keepAlive);
+    clearInterval(heartbeat);
     activeConnections.delete(res);
   });
 });
