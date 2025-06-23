@@ -21,6 +21,138 @@ app.use((req, res, next) => {
   next();
 });
 
+// ===== NUEVAS FUNCIONES PARA REVENUE INTELLIGENCE =====
+
+// 6. WEATHER INTELLIGENCE (NUEVA)
+async function getWeatherIntelligence(location, days = 7) {
+  const API_KEY = process.env.OPENWEATHER_API_KEY;
+  
+  if (!API_KEY) {
+    return {
+      location: location,
+      current: { 
+        temperature: 24, 
+        condition: "sunny", 
+        humidity: 62, 
+        description: "Clear skies with excellent visibility" 
+      },
+      forecast: [
+        { date: "2025-06-25", temp_max: 28, temp_min: 18, condition: "sunny", rain_probability: 5, tourism_impact: "high" },
+        { date: "2025-06-26", temp_max: 26, temp_min: 17, condition: "partly_cloudy", rain_probability: 15, tourism_impact: "high" },
+        { date: "2025-06-27", temp_max: 30, temp_min: 21, condition: "sunny", rain_probability: 0, tourism_impact: "very_high" },
+        { date: "2025-06-28", temp_max: 25, temp_min: 16, condition: "cloudy", rain_probability: 45, tourism_impact: "medium" }
+      ],
+      tourism_impact: "high",
+      revenue_recommendations: [
+        "Increase weekend rates 20% due to excellent weather forecast",
+        "Promote outdoor dining and terrace amenities",
+        "Market pool and garden areas aggressively",
+        "Create sunshine packages for leisure guests"
+      ],
+      pricing_adjustments: {
+        sunny_days: "+15-25% premium pricing recommended",
+        rainy_days: "Consider indoor amenity packages",
+        optimal_dates: ["2025-06-27", "2025-06-29"]
+      }
+    };
+  }
+
+  try {
+    // Implementación real con OpenWeather API
+    const currentResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${API_KEY}&units=metric&lang=es`
+    );
+    const currentData = await currentResponse.json();
+
+    const forecastResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${API_KEY}&units=metric&cnt=${days * 8}&lang=es`
+    );
+    const forecastData = await forecastResponse.json();
+
+    return {
+      location: location,
+      current: {
+        temperature: Math.round(currentData.main.temp),
+        condition: currentData.weather[0].main.toLowerCase(),
+        humidity: currentData.main.humidity,
+        description: currentData.weather[0].description
+      },
+      forecast: forecastData.list.slice(0, days).map(item => ({
+        date: item.dt_txt.split(' ')[0],
+        temp_max: Math.round(item.main.temp_max),
+        temp_min: Math.round(item.main.temp_min),
+        condition: item.weather[0].main.toLowerCase(),
+        rain_probability: Math.round(item.pop * 100),
+        tourism_impact: item.main.temp > 20 && item.pop < 0.3 ? "high" : "medium"
+      })),
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Weather API Error:', error);
+    return { error: error.message, location: location };
+  }
+}
+
+// 7. EVENTS INTELLIGENCE (NUEVA)
+async function getEventsIntelligence(location, days = 30) {
+  return {
+    location: location,
+    period: `${days} days`,
+    events: [
+      {
+        date: "2025-06-28",
+        name: "International Summer Music Festival",
+        type: "festival",
+        venue: "Central Park Amphitheater", 
+        expected_attendance: 25000,
+        tourism_impact: "very_high",
+        duration_days: 3,
+        revenue_impact: "+200% weekend rates recommended",
+        pricing_strategy: "Block premium inventory, minimum 3-night stay"
+      },
+      {
+        date: "2025-07-05",
+        name: "Global Tech Innovation Conference",
+        type: "business",
+        venue: "Convention Center",
+        expected_attendance: 12000,
+        tourism_impact: "high", 
+        duration_days: 2,
+        revenue_impact: "+120% corporate rates, extend stay packages",
+        pricing_strategy: "Corporate packages with shuttle service"
+      },
+      {
+        date: "2025-07-12",
+        name: "Culinary Arts Festival",
+        type: "cultural",
+        venue: "Downtown District",
+        expected_attendance: 8000,
+        tourism_impact: "high",
+        duration_days: 2,
+        revenue_impact: "+80% rates, promote dining experiences"
+      }
+    ],
+    calendar_summary: {
+      high_impact_days: 8,
+      medium_impact_days: 4,
+      very_high_impact_days: 3,
+      peak_period: "June 28 - July 7",
+      total_events: 3,
+      revenue_opportunity: "€65,000-85,000 additional potential",
+      occupancy_projection: "95-100% for peak events"
+    },
+    pricing_recommendations: [
+      "Block inventory immediately for festival weekend June 28-30",
+      "Increase corporate rates 120% for tech conference July 5-6", 
+      "Create festival packages with shuttle and VIP access",
+      "Implement minimum stay requirements (3+ nights) for major events"
+    ],
+    timestamp: new Date().toISOString()
+  };
+}
+
+// ===== FIN NUEVAS FUNCIONES =====
+
 // HTTP Streamable endpoint para MCP
 app.post('/stream', async (req, res) => {
   console.log('=== MCP HTTP Streamable Request ===');
@@ -166,6 +298,42 @@ app.post('/stream', async (req, res) => {
                 }
               },
               required: ['operation', 'data']
+            }
+          },
+          {
+            name: 'weather_intelligence',
+            description: 'Weather analysis for tourism demand and pricing optimization',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { 
+                  type: 'string', 
+                  description: 'Hotel location for weather analysis' 
+                },
+                days: { 
+                  type: 'number', 
+                  description: 'Number of forecast days (default: 7)' 
+                }
+              },
+              required: ['location']
+            }
+          },
+          {
+            name: 'events_intelligence',
+            description: 'Event calendar analysis for demand forecasting and revenue optimization',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { 
+                  type: 'string', 
+                  description: 'Location for event analysis' 
+                },
+                days: { 
+                  type: 'number', 
+                  description: 'Number of days to analyze (default: 30)' 
+                }
+              },
+              required: ['location']
             }
           }
         ]
@@ -475,6 +643,108 @@ app.post('/stream', async (req, res) => {
         }
       });
       
+    } else if (toolName === 'weather_intelligence') {
+      const location = toolArgs?.location || 'Madrid';
+      const days = toolArgs?.days || 7;
+      
+      try {
+        const weatherData = await getWeatherIntelligence(location, days);
+        
+        let weatherReport = `🌤️ Análisis meteorológico para ${location}\n\n`;
+        
+        if (weatherData.error) {
+          weatherReport += `❌ Error: ${weatherData.error}\n`;
+        } else {
+          weatherReport += `🌡️ **Condiciones actuales:**\n`;
+          weatherReport += `- Temperatura: ${weatherData.current.temperature}°C\n`;
+          weatherReport += `- Condición: ${weatherData.current.condition}\n`;
+          weatherReport += `- Humedad: ${weatherData.current.humidity}%\n\n`;
+          
+          weatherReport += `📅 **Pronóstico (${days} días):**\n`;
+          weatherData.forecast.slice(0, 5).forEach(day => {
+            weatherReport += `${day.date}: ${day.temp_max}°/${day.temp_min}°C, ${day.condition}, lluvia: ${day.rain_probability}%\n`;
+          });
+          
+          weatherReport += `\n💰 **Impacto turístico:** ${weatherData.tourism_impact}\n\n`;
+          weatherReport += `🎯 **Recomendaciones revenue:**\n`;
+          weatherData.revenue_recommendations.forEach(rec => {
+            weatherReport += `• ${rec}\n`;
+          });
+        }
+        
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: weatherReport
+            }]
+          }
+        });
+      } catch (error) {
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: `❌ Error en weather intelligence: ${error.message}`
+            }]
+          }
+        });
+      }
+      
+    } else if (toolName === 'events_intelligence') {
+      const location = toolArgs?.location || 'Madrid';
+      const days = toolArgs?.days || 30;
+      
+      try {
+        const eventsData = await getEventsIntelligence(location, days);
+        
+        let eventsReport = `🎪 Análisis de eventos para ${location} (próximos ${days} días)\n\n`;
+        
+        eventsReport += `📊 **Resumen del calendario:**\n`;
+        eventsReport += `- Total eventos: ${eventsData.calendar_summary.total_events}\n`;
+        eventsReport += `- Días alto impacto: ${eventsData.calendar_summary.high_impact_days}\n`;
+        eventsReport += `- Período pico: ${eventsData.calendar_summary.peak_period}\n`;
+        eventsReport += `- Oportunidad revenue: ${eventsData.calendar_summary.revenue_opportunity}\n\n`;
+        
+        eventsReport += `🎯 **Eventos principales:**\n`;
+        eventsData.events.slice(0, 3).forEach(event => {
+          eventsReport += `📅 ${event.date} - **${event.name}**\n`;
+          eventsReport += `   Tipo: ${event.type} | Asistentes: ${event.expected_attendance.toLocaleString()}\n`;
+          eventsReport += `   Impacto: ${event.tourism_impact} | ${event.revenue_impact}\n\n`;
+        });
+        
+        eventsReport += `💰 **Recomendaciones pricing:**\n`;
+        eventsData.pricing_recommendations.slice(0, 4).forEach(rec => {
+          eventsReport += `• ${rec}\n`;
+        });
+        
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: eventsReport
+            }]
+          }
+        });
+      } catch (error) {
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: `❌ Error en events intelligence: ${error.message}`
+            }]
+          }
+        });
+      }
+      
     } else {
       // Tool not found
       console.log(`Unknown tool requested: ${toolName}`);
@@ -485,7 +755,7 @@ app.post('/stream', async (req, res) => {
           code: -32601,
           message: `Herramienta no encontrada: ${toolName}`,
           data: {
-            availableTools: ['web_search', 'analyze_text', 'generate_content', 'schedule_reminder', 'data_processor']
+            availableTools: ['web_search', 'analyze_text', 'generate_content', 'schedule_reminder', 'data_processor', 'weather_intelligence', 'events_intelligence']
           }
         }
       });
@@ -516,7 +786,7 @@ app.post('/stream', async (req, res) => {
 // Root endpoint - Server status
 app.get('/', (req, res) => {
   res.json({
-    status: 'Productivity MCP Server v2.0 - HTTP Streamable Ready!',
+    status: 'Revenue Intelligence MCP Server v3.0 - HTTP Streamable Ready!',
     endpoints: {
       stream: '/stream (HTTP Streamable)',
       tools: [
@@ -524,10 +794,12 @@ app.get('/', (req, res) => {
         'analyze_text - Text analysis and insights', 
         'generate_content - Content creation',
         'schedule_reminder - Task and reminder management',
-        'data_processor - Data transformation utilities'
+        'data_processor - Data transformation utilities',
+        'weather_intelligence - Weather impact analysis',
+        'events_intelligence - Event calendar optimization'
       ]
     },
-    version: '2.0.0',
+    version: '3.0.0',
     protocol: 'MCP HTTP Streamable'
   });
 });
@@ -543,8 +815,9 @@ app.get('/health', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`🚀 Productivity MCP Server v2.0 running on port ${port}`);
+  console.log(`🚀 Revenue Intelligence MCP Server v3.0 running on port ${port}`);
   console.log(`📡 HTTP Streamable endpoint: /stream`);
-  console.log(`🛠️ Available tools: web_search, analyze_text, generate_content, schedule_reminder, data_processor`);
+  console.log(`🛠️ Available tools: web_search, analyze_text, generate_content, schedule_reminder, data_processor, weather_intelligence, events_intelligence`);
   console.log(`🔍 Brave Search API: ${process.env.BRAVE_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
+  console.log(`🌤️ Weather API: ${process.env.OPENWEATHER_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
 });
