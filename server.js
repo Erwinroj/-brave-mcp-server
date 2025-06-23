@@ -151,6 +151,197 @@ async function getEventsIntelligence(location, days = 30) {
   };
 }
 
+// 8. HOTEL DATA INTELLIGENCE (NUEVA - CRÍTICA)
+async function getHotelDataIntelligence(location, hotelType = "luxury") {
+  const datasets = {
+    "paris_luxury": {
+      hotel_profile: {
+        name: "Hotel Boutique Paris Center",
+        category: "4★ Boutique",
+        rooms: 85,
+        location: "Paris 1er",
+        competitive_set: ["Hotel des Grands Boulevards", "Hotel Malte Opera", "Hotel Victoires Opera"],
+        property_type: "Boutique Urban"
+      },
+      current_metrics: {
+        occupancy: 82.5,
+        adr: 285, // EUR
+        revpar: 235.1,
+        last_30_days: { occupancy: 78.2, adr: 275, revpar: 215.1 },
+        ytd_performance: { occupancy: 79.8, adr: 280, revpar: 223.4 }
+      },
+      room_types: [
+        { type: "Standard", inventory: 45, current_rate: 250, target_rate: 280, occupancy: 85 },
+        { type: "Superior", inventory: 30, current_rate: 320, target_rate: 350, occupancy: 78 },
+        { type: "Suite", inventory: 10, current_rate: 480, target_rate: 520, occupancy: 92 }
+      ],
+      market_segments: {
+        corporate: { share: 35, adr: 295, booking_window: 14, growth_trend: "+5%" },
+        leisure: { share: 45, adr: 275, booking_window: 28, growth_trend: "+12%" },
+        groups: { share: 15, adr: 240, booking_window: 45, growth_trend: "-2%" },
+        luxury_packages: { share: 5, adr: 420, booking_window: 35, growth_trend: "+18%" }
+      },
+      channel_mix: {
+        direct: { share: 40, adr: 300, commission: 0, conversion: "3.2%" },
+        ota_booking: { share: 25, adr: 260, commission: 18, conversion: "12.1%" },
+        ota_expedia: { share: 15, adr: 265, commission: 20, conversion: "8.5%" },
+        corporate_contracts: { share: 20, adr: 290, commission: 5, conversion: "15.8%" }
+      }
+    },
+
+    "colombia_luxury": {
+      hotel_profile: {
+        name: "Gran Hotel Eje Cafetero",
+        category: "5★ Luxury Resort",
+        rooms: 120,
+        location: "Pereira, Risaralda",
+        competitive_set: ["Hotel Movich Pereira", "Sonesta Hotel Pereira", "GHL Hotel Abadia Plaza"],
+        property_type: "Business Resort"
+      },
+      current_metrics: {
+        occupancy: 75.8,
+        adr: 380000, // COP (€95)
+        revpar: 288040,
+        last_30_days: { occupancy: 71.2, adr: 365000, revpar: 259880 },
+        ytd_performance: { occupancy: 73.5, adr: 375000, revpar: 275625 }
+      },
+      room_types: [
+        { type: "Superior", inventory: 60, current_rate: 320000, target_rate: 360000, occupancy: 78 },
+        { type: "Junior Suite", inventory: 40, current_rate: 450000, target_rate: 490000, occupancy: 72 },
+        { type: "Presidential Suite", inventory: 20, current_rate: 680000, target_rate: 750000, occupancy: 85 }
+      ],
+      market_segments: {
+        corporate: { share: 40, adr: 395000, booking_window: 12, growth_trend: "+8%" },
+        leisure_national: { share: 35, adr: 370000, booking_window: 25, growth_trend: "+15%" },
+        international: { share: 20, adr: 420000, booking_window: 45, growth_trend: "+22%" },
+        events_weddings: { share: 5, adr: 350000, booking_window: 90, growth_trend: "+35%" }
+      },
+      channel_mix: {
+        direct: { share: 35, adr: 400000, commission: 0, conversion: "2.8%" },
+        ota_international: { share: 25, adr: 370000, commission: 18, conversion: "9.5%" },
+        corporate_contracts: { share: 25, adr: 390000, commission: 8, conversion: "18.2%" },
+        travel_agents: { share: 15, adr: 360000, commission: 12, conversion: "7.3%" }
+      }
+    },
+
+    "colombia_experiential": {
+      hotel_profile: {
+        name: "Hacienda Coffee Experience",
+        category: "3★ Experiential Lodge",
+        rooms: 24,
+        location: "Salento, Quindío",
+        competitive_set: ["Casa San Carlos Lodge", "Biohotel Organic Suites", "Coffee Tree Boutique"],
+        property_type: "Experiential Eco-Lodge"
+      },
+      current_metrics: {
+        occupancy: 68.5,
+        adr: 180000, // COP (€45)
+        revpar: 123300,
+        last_30_days: { occupancy: 72.1, adr: 175000, revpar: 126175 },
+        ytd_performance: { occupancy: 65.8, adr: 178000, revpar: 117124 }
+      },
+      room_types: [
+        { type: "Standard Mountain View", inventory: 12, current_rate: 160000, target_rate: 180000, occupancy: 70 },
+        { type: "Coffee Suite", inventory: 8, current_rate: 200000, target_rate: 230000, occupancy: 65 },
+        { type: "Hacienda Master", inventory: 4, current_rate: 280000, target_rate: 320000, occupancy: 75 }
+      ],
+      market_segments: {
+        domestic_leisure: { share: 55, adr: 170000, booking_window: 21, growth_trend: "+12%" },
+        international_backpackers: { share: 25, adr: 165000, booking_window: 14, growth_trend: "+8%" },
+        coffee_experience: { share: 20, adr: 195000, booking_window: 35, growth_trend: "+25%" }
+      },
+      channel_mix: {
+        direct: { share: 45, adr: 185000, commission: 0, conversion: "4.1%" },
+        booking_com: { share: 30, adr: 170000, commission: 15, conversion: "11.2%" },
+        airbnb: { share: 15, adr: 175000, commission: 14, conversion: "8.7%" },
+        local_agencies: { share: 10, adr: 190000, commission: 10, conversion: "6.5%" }
+      }
+    }
+  };
+
+  const hotelData = datasets[location] || datasets["paris_luxury"];
+  
+  // Cálculos de revenue management
+  const current_revenue_monthly = (hotelData.current_metrics.revpar * hotelData.hotel_profile.rooms * 30);
+  const target_revenue_monthly = (hotelData.current_metrics.revpar * 1.15 * hotelData.hotel_profile.rooms * 30);
+  const revenue_gap = target_revenue_monthly - current_revenue_monthly;
+
+  return {
+    ...hotelData,
+    market_positioning: location === "colombia_luxury" ? "Premium luxury in emerging coffee region market" : 
+                       location === "colombia_experiential" ? "Authentic coffee culture experiential tourism" :
+                       "Established European luxury boutique positioning",
+    
+    revenue_analysis: {
+      current_monthly_revenue: Math.round(current_revenue_monthly),
+      target_monthly_revenue: Math.round(target_revenue_monthly),
+      revenue_opportunity: Math.round(revenue_gap),
+      performance_vs_budget: location.includes("colombia") ? "+5.2%" : "+8.7%",
+      market_share: location === "colombia_luxury" ? "12%" : location === "colombia_experiential" ? "8%" : "15%"
+    },
+
+    revenue_management_insights: {
+      booking_pace: location.includes("colombia") ? "8% ahead vs last year same period" : "15% ahead of last year same period",
+      demand_forecast: location === "colombia_luxury" ? "Corporate demand strong, international leisure growing rapidly" :
+                      location === "colombia_experiential" ? "Peak coffee harvest season approaching - high demand expected" :
+                      "Steady luxury demand with spring uptick expected",
+      
+      critical_dates: location === "colombia_luxury" ? [
+        "2025-07-15: Corporate conference season starts",
+        "2025-08-01: International coffee festival",
+        "2025-12-15: Holiday premium season"
+      ] : location === "colombia_experiential" ? [
+        "2025-07-01: Coffee harvest season begins",
+        "2025-08-15: Festival Nacional del Café",
+        "2025-10-12: International backpacker season"
+      ] : [
+        "2025-07-14: Summer peak season begins",
+        "2025-09-15: Business travel resumes",
+        "2025-12-20: Holiday premium rates"
+      ],
+
+      pricing_opportunities: location === "colombia_luxury" ? [
+        "Increase corporate rates +5% (currently underpriced vs market positioning)",
+        "Premium wedding packages +15% (high demand, low competition)", 
+        "International guest rates +10% (strong USD/EUR exchange rates)",
+        "Implement dynamic weekend pricing +20% for peak dates"
+      ] : location === "colombia_experiential" ? [
+        "Coffee harvest season premium +25% (unique positioning)",
+        "International experience packages +15% (growing segment)",
+        "Extend minimum stay to 2 nights for weekends",
+        "Create premium coffee master class packages +30%"
+      ] : [
+        "Weekend rates optimization +8% (demand exceeds supply)",
+        "Corporate package restructuring for better yield",
+        "Premium suite rates +12% (high occupancy indicates underpricing)",
+        "Implement length-of-stay controls for peak periods"
+      ]
+    },
+
+    competitive_intelligence: {
+      position_vs_compset: location === "colombia_luxury" ? "ADR premium +15% vs competitive set" :
+                          location === "colombia_experiential" ? "Occupancy leader in experiential segment" :
+                          "Premium positioning maintained, ADR +12% above comp set",
+      
+      market_opportunities: location === "colombia_luxury" ? [
+        "Corporate market underserved in region",
+        "International MICE potential untapped",
+        "Luxury wellness tourism growing 25% annually"
+      ] : location === "colombia_experiential" ? [
+        "Coffee tourism boom +40% growth projected",
+        "Sustainable tourism trend favorizes eco-lodges",
+        "Instagram-worthy experiences drive bookings"
+      ] : [
+        "Boutique luxury market growing 15% annually",
+        "Business leisure trend benefits central location",
+        "Luxury experience packages outperform traditional rates"
+      ]
+    },
+
+    timestamp: new Date().toISOString()
+  };
+}
+
 // ===== FIN NUEVAS FUNCIONES =====
 
 // HTTP Streamable endpoint para MCP
@@ -331,6 +522,25 @@ app.post('/stream', async (req, res) => {
                 days: { 
                   type: 'number', 
                   description: 'Number of days to analyze (default: 30)' 
+                }
+              },
+              required: ['location']
+            }
+          },
+          {
+            name: 'hotel_data_intelligence',
+            description: 'Hotel operational data and revenue management insights by market type',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                location: { 
+                  type: 'string', 
+                  enum: ['paris_luxury', 'colombia_luxury', 'colombia_experiential'],
+                  description: 'Hotel market type: paris_luxury, colombia_luxury, or colombia_experiential' 
+                },
+                hotelType: { 
+                  type: 'string', 
+                  description: 'Hotel type specification (default: luxury)' 
                 }
               },
               required: ['location']
@@ -744,7 +954,62 @@ app.post('/stream', async (req, res) => {
           }
         });
       }
+    } else if (toolName === 'hotel_data_intelligence') {
+      const location = toolArgs?.location || 'paris_luxury';
+      const hotelType = toolArgs?.hotelType || 'luxury';
       
+      try {
+        const hotelData = await getHotelDataIntelligence(location, hotelType);
+        
+        let hotelReport = `🏨 Análisis de datos hoteleros para ${hotelData.hotel_profile.name}\n\n`;
+        
+        hotelReport += `🏢 **Perfil del hotel:**\n`;
+        hotelReport += `- Categoría: ${hotelData.hotel_profile.category}\n`;
+        hotelReport += `- Habitaciones: ${hotelData.hotel_profile.rooms}\n`;
+        hotelReport += `- Ubicación: ${hotelData.hotel_profile.location}\n`;
+        hotelReport += `- Tipo: ${hotelData.hotel_profile.property_type}\n\n`;
+        
+        hotelReport += `📊 **Métricas actuales:**\n`;
+        hotelReport += `- Ocupación: ${hotelData.current_metrics.occupancy}%\n`;
+        hotelReport += `- ADR: ${typeof hotelData.current_metrics.adr === 'number' && hotelData.current_metrics.adr > 1000 ? '$' + hotelData.current_metrics.adr.toLocaleString() + ' COP' : '€' + hotelData.current_metrics.adr}\n`;
+        hotelReport += `- RevPAR: ${typeof hotelData.current_metrics.revpar === 'number' && hotelData.current_metrics.revpar > 1000 ? '$' + hotelData.current_metrics.revpar.toLocaleString() + ' COP' : '€' + hotelData.current_metrics.revpar}\n\n`;
+        
+        hotelReport += `💰 **Análisis revenue:**\n`;
+        hotelReport += `- Revenue mensual actual: ${typeof hotelData.revenue_analysis.current_monthly_revenue === 'number' && hotelData.revenue_analysis.current_monthly_revenue > 100000 ? '$' + hotelData.revenue_analysis.current_monthly_revenue.toLocaleString() + ' COP' : '€' + hotelData.revenue_analysis.current_monthly_revenue.toLocaleString()}\n`;
+        hotelReport += `- Oportunidad revenue: ${typeof hotelData.revenue_analysis.revenue_opportunity === 'number' && hotelData.revenue_analysis.revenue_opportunity > 100000 ? '$' + hotelData.revenue_analysis.revenue_opportunity.toLocaleString() + ' COP' : '€' + hotelData.revenue_analysis.revenue_opportunity.toLocaleString()}\n`;
+        hotelReport += `- Market share: ${hotelData.revenue_analysis.market_share}\n\n`;
+        
+        hotelReport += `🎯 **Oportunidades de pricing:**\n`;
+        hotelData.revenue_management_insights.pricing_opportunities.slice(0, 3).forEach(opp => {
+          hotelReport += `• ${opp}\n`;
+        });
+        
+        hotelReport += `\n📈 **Competitive intelligence:**\n`;
+        hotelReport += `- Posición vs competencia: ${hotelData.competitive_intelligence.position_vs_compset}\n`;
+        hotelReport += `- Market positioning: ${hotelData.market_positioning}\n`;
+        
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: hotelReport
+            }]
+          }
+        });
+      } catch (error) {
+        res.json({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            content: [{
+              type: 'text',
+              text: `❌ Error en hotel data intelligence: ${error.message}`
+            }]
+          }
+        });
+      }  
     } else {
       // Tool not found
       console.log(`Unknown tool requested: ${toolName}`);
@@ -755,7 +1020,7 @@ app.post('/stream', async (req, res) => {
           code: -32601,
           message: `Herramienta no encontrada: ${toolName}`,
           data: {
-            availableTools: ['web_search', 'analyze_text', 'generate_content', 'schedule_reminder', 'data_processor', 'weather_intelligence', 'events_intelligence']
+            availableTools: ['web_search', 'analyze_text', 'generate_content', 'schedule_reminder', 'data_processor', 'weather_intelligence', 'events_intelligence', 'hotel_data_intelligence']
           }
         }
       });
@@ -817,7 +1082,7 @@ app.get('/health', (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Revenue Intelligence MCP Server v3.0 running on port ${port}`);
   console.log(`📡 HTTP Streamable endpoint: /stream`);
-  console.log(`🛠️ Available tools: web_search, analyze_text, generate_content, schedule_reminder, data_processor, weather_intelligence, events_intelligence`);
+  console.log(`🛠️ Available tools: web_search, analyze_text, generate_content, schedule_reminder, data_processor, weather_intelligence, events_intelligence, hotel_data_intelligence`);
   console.log(`🔍 Brave Search API: ${process.env.BRAVE_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
   console.log(`🌤️ Weather API: ${process.env.OPENWEATHER_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
 });
