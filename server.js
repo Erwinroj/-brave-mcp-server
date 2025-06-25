@@ -25,9 +25,9 @@ app.use((req, res, next) => {
 
 // 1. REQUEST TIMEOUT PROTECTION
 const REQUEST_TIMEOUT = 30000; // 30 segundos
-const withTimeout = async (promise, timeoutMs = REQUEST_TIMEOUT) => {
+const withTimeout = async (promiseFunc, timeoutMs = REQUEST_TIMEOUT) => {
   return Promise.race([
-    promise,
+    promiseFunc(),
     new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Request timeout - operación cancelada por seguridad')), timeoutMs)
     )
@@ -60,7 +60,7 @@ const safeLog = (message, data = {}) => {
   }
 };
 
-// 4. CIRCUIT BREAKER PROTECTION
+// 4. CIRCUIT BREAKER PROTECTION - CORREGIDO
 class CircuitBreaker {
   constructor(threshold = 3, timeout = 60000) {
     this.failureCount = 0;
@@ -79,7 +79,8 @@ class CircuitBreaker {
     }
     
     try {
-      const result = await withTimeout(fn());
+      // CORRECCIÓN CRÍTICA: Pasar función, no ejecutarla
+      const result = await withTimeout(() => fn(), 30000);
       this.onSuccess();
       return result;
     } catch (error) {
@@ -1702,7 +1703,18 @@ app.post('/stream', async (req, res) => {
           }
         });
       }
-      
+    } else {
+      // Unknown tool
+      console.log(`Unknown tool: ${toolName}`);
+      res.json({
+        jsonrpc: '2.0',
+        id: request.id,
+        error: {
+          code: -32601,
+          message: `Herramienta no soportada: ${toolName}`
+        }
+      });
+    }
   } else {
     // Unknown method
     console.log(`Unknown method: ${request.method}`);
