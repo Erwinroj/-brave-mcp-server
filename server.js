@@ -263,14 +263,14 @@ async function getEventsIntelligence(location, days = 30) {
   }, 'events_intelligence');
 }
 
-// 8. HOTEL DATA INTELLIGENCE (DINÁMICA - PROFESIONAL) - PROTEGIDA - EXPANDIDA EJE CAFETERO
+// 8. HOTEL DATA INTELLIGENCE (DINÁMICA - PROFESIONAL) - PROTEGIDA
 async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 85, propertyStyle = "urban") {
   return await circuitBreakers.mcp_tools.call(async () => {
     rateLimiter(); // Rate limiting
     
     safeLog('Hotel Data Intelligence iniciado', { location, hotelType, rooms, propertyStyle });
     
-    // CONFIGURACIÓN DINÁMICA POR MERCADO - EXPANDIDA EJE CAFETERO COMPLETO
+    // CONFIGURACIÓN DINÁMICA POR MERCADO - CAMBIO 2: CIUDADES EJE CAFETERO AGREGADAS
     const marketConfig = {
       // MERCADOS EUROPEOS
       "Paris": { currency: "EUR", baseRate: 280, marketMultiplier: 1.0, taxRate: 20, language: "FR" },
@@ -278,48 +278,23 @@ async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 
       "Barcelona": { currency: "EUR", baseRate: 250, marketMultiplier: 0.95, taxRate: 21, language: "ES" },
       "Rome": { currency: "EUR", baseRate: 240, marketMultiplier: 0.90, taxRate: 22, language: "IT" },
       
-      // EJE CAFETERO COLOMBIANO - COBERTURA COMPLETA
-      // CAPITALES DEPARTAMENTALES
-      "Armenia": { currency: "COP", baseRate: 320000, marketMultiplier: 1.0, taxRate: 19, language: "ES" },
-      "Pereira": { currency: "COP", baseRate: 290000, marketMultiplier: 0.85, taxRate: 19, language: "ES" },
-      "Manizales": { currency: "COP", baseRate: 275000, marketMultiplier: 0.78, taxRate: 19, language: "ES" },
-      
-      // QUINDÍO COMPLETO
-      "Montenegro": { currency: "COP", baseRate: 220000, marketMultiplier: 0.65, taxRate: 19, language: "ES" },
-      "Filandia": { currency: "COP", baseRate: 210000, marketMultiplier: 0.62, taxRate: 19, language: "ES" },
-      "Salento": { currency: "COP", baseRate: 260000, marketMultiplier: 0.70, taxRate: 19, language: "ES" },
-      "Circasia": { currency: "COP", baseRate: 200000, marketMultiplier: 0.60, taxRate: 19, language: "ES" },
-      "Calarcá": { currency: "COP", baseRate: 195000, marketMultiplier: 0.58, taxRate: 19, language: "ES" },
-      "La Tebaida": { currency: "COP", baseRate: 185000, marketMultiplier: 0.55, taxRate: 19, language: "ES" },
-      
-      // RISARALDA COMPLETO
-      "Dosquebradas": { currency: "COP", baseRate: 265000, marketMultiplier: 0.75, taxRate: 19, language: "ES" },
-      "Santa Rosa de Cabal": { currency: "COP", baseRate: 240000, marketMultiplier: 0.68, taxRate: 19, language: "ES" },
-      "Marsella": { currency: "COP", baseRate: 180000, marketMultiplier: 0.52, taxRate: 19, language: "ES" },
-      "Belén de Umbría": { currency: "COP", baseRate: 175000, marketMultiplier: 0.50, taxRate: 19, language: "ES" },
-      
-      // CALDAS COMPLETO
-      "Chinchiná": { currency: "COP", baseRate: 190000, marketMultiplier: 0.56, taxRate: 19, language: "ES" },
-      "Palestina": { currency: "COP", baseRate: 175000, marketMultiplier: 0.50, taxRate: 19, language: "ES" },
-      "Villamaría": { currency: "COP", baseRate: 185000, marketMultiplier: 0.54, taxRate: 19, language: "ES" },
-      "Neira": { currency: "COP", baseRate: 170000, marketMultiplier: 0.48, taxRate: 19, language: "ES" },
-      
-      // PARQUES TEMÁTICOS Y ATRACCIONES
-      "Parque del Café": { currency: "COP", baseRate: 350000, marketMultiplier: 1.1, taxRate: 19, language: "ES" },
-      "Panaca": { currency: "COP", baseRate: 320000, marketMultiplier: 1.0, taxRate: 19, language: "ES" },
-      "Recuca": { currency: "COP", baseRate: 280000, marketMultiplier: 0.85, taxRate: 19, language: "ES" },
-      
-      // OTRAS REGIONES COLOMBIANAS
+      // MERCADOS COLOMBIANOS
       "Bogotá": { currency: "COP", baseRate: 350000, marketMultiplier: 1.0, taxRate: 19, language: "ES" },
       "Medellín": { currency: "COP", baseRate: 320000, marketMultiplier: 0.9, taxRate: 19, language: "ES" },
       "Cartagena": { currency: "COP", baseRate: 450000, marketMultiplier: 1.2, taxRate: 19, language: "ES" },
+      "Pereira": { currency: "COP", baseRate: 280000, marketMultiplier: 0.75, taxRate: 19, language: "ES" },
+      "Armenia": { currency: "COP", baseRate: 260000, marketMultiplier: 0.70, taxRate: 19, language: "ES" },
+      "Salento": { currency: "COP", baseRate: 200000, marketMultiplier: 0.60, taxRate: 19, language: "ES" },
+      "Manizales": { currency: "COP", baseRate: 270000, marketMultiplier: 0.73, taxRate: 19, language: "ES" },
+      "Montenegro": { currency: "COP", baseRate: 220000, marketMultiplier: 0.65, taxRate: 19, language: "ES" },
+      "Filandia": { currency: "COP", baseRate: 210000, marketMultiplier: 0.62, taxRate: 19, language: "ES" },
       
       // OTROS MERCADOS
       "Mexico City": { currency: "MXN", baseRate: 2500, marketMultiplier: 1.0, taxRate: 16, language: "ES" },
       "Buenos Aires": { currency: "ARS", baseRate: 45000, marketMultiplier: 1.0, taxRate: 21, language: "ES" }
     };
 
-    // CONFIGURACIÓN POR TIPO DE HOTEL - EXPANDIDA CON FINCA CAFETERA
+    // CONFIGURACIÓN POR TIPO DE HOTEL - CAMBIO 3: FINCA_CAFETERA AGREGADA
     const hotelTypeConfig = {
       "5_star": { multiplier: 1.8, occupancyTarget: 78, revparMultiplier: 1.9, segmentMix: "luxury" },
       "4_star": { multiplier: 1.0, occupancyTarget: 82, revparMultiplier: 1.0, segmentMix: "upscale" },
@@ -337,7 +312,7 @@ async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 
     };
 
     // OBTENER CONFIGURACIONES
-    const market = marketConfig[location] || marketConfig["Armenia"];
+    const market = marketConfig[location] || marketConfig["Paris"];
     const typeConfig = hotelTypeConfig[hotelType] || hotelTypeConfig["4_star"];
     const styleConfig = propertyStyleConfig[propertyStyle] || propertyStyleConfig["urban"];
 
@@ -355,58 +330,32 @@ async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 
     const currentOccupancy = typeConfig.occupancyTarget + (Math.random() * 10 - 5); // ±5% variation
     const revpar = Math.round(adjustedADR * (currentOccupancy / 100));
 
-    // GENERAR COMPETITIVE SET DINÁMICO - EXPANDIDO EJE CAFETERO
+    // GENERAR COMPETITIVE SET DINÁMICO
     const generateCompetitiveSet = (location, hotelType) => {
       const competitiveSets = {
-        // CAPITALES EJE CAFETERO
-        "Armenia": {
-          "5_star": ["Hotel Casa Medina Armenia", "Hampton by Hilton Armenia", "Hotel Zuldemayda"],
-          "4_star": ["Hotel Centenario", "GHL Hotel Armenia", "Hotel La Castellana"],
-          "boutique": ["Hotel Casa Morales", "Bambú Hostel Armenia", "Hotel Boutique San Simon"],
-          "finca_cafetera": ["Finca Villa Martha", "Hacienda Combia", "Finca La Pradera"]
+        "Paris": {
+          "5_star": ["Hotel de Crillon", "Le Bristol Paris", "Hotel Plaza Athénée"],
+          "4_star": ["Hotel des Grands Boulevards", "Hotel Malte Opera", "Hotel Victoires Opera"],
+          "boutique": ["Hotel Particulier Montmartre", "Hotel des Grands Boulevards", "Hotel Thérèse"]
         },
-        "Pereira": {
-          "5_star": ["Hotel Pereira Plaza", "Sonesta Hotel Pereira", "GHL Hotel Abadia Plaza"],
-          "4_star": ["Hotel Movich Pereira", "Hotel Don Saul", "Hotel Dann Combeima"],
-          "boutique": ["Hotel Boutique San Simon", "Casa Hotel Boutique", "Hotel de la Presentación"],
-          "finca_cafetera": ["Finca Hotel La Casona", "Hacienda San José", "Termales San Vicente"]
+        "Bogotá": {
+          "5_star": ["Hotel Casa Medina", "Sofitel Bogotá Victoria Regia", "JW Marriott Bogotá"],
+          "4_star": ["Hotel Bioma", "Hotel Morrison 84", "Hotel Estelar La Fontana"],
+          "boutique": ["Casa Legado", "Hotel B3 Virrey", "Hotel de la Opera"]
         },
-        "Manizales": {
-          "5_star": ["Hotel Las Colinas", "Estelar Las Colinas", "Hotel Carretero"],
-          "4_star": ["Casa Blanca Hotel", "Hotel Termales del Ruiz", "Green Park Hotel"],
-          "boutique": ["Hotel Boutique Casabianca", "Kudetalai Hotel Boutique", "Hotel Mountain House"],
-          "finca_cafetera": ["Termales del Ruiz", "Hacienda Venecia", "Finca Hotel Villa Nohelia"]
+        "Medellín": {
+          "5_star": ["Hotel Intercontinental", "Hotel Four Points Medellín", "Hotel Estelar Milla de Oro"],
+          "4_star": ["Hotel Dann Carlton", "Hotel San Fernando Plaza", "Hotel Poblado Plaza"],
+          "boutique": ["Art Hotel", "Hotel Du Parc", "Casa Kiwi Hostel"]
         },
-        
-        // MUNICIPIOS TURÍSTICOS QUINDÍO
-        "Salento": {
-          "5_star": ["Hotel Casa Loma", "The Coffee Farm Inn", "Salento Real"],
-          "4_star": ["Hotel Salento Plaza", "Casa de Huéspedes Salento", "Hotel Salento Colonial"],
-          "boutique": ["Casa Loma Boutique", "Hotel Villa de Salento", "Posada de Salento"],
-          "hostel": ["Plantation House Hostel", "The Coffee Tree Hostel", "Tralala Hostel"],
-          "finca_cafetera": ["Finca El Ocaso", "Hacienda Bambusa", "Finca Villa Martha"]
-        },
-        "Filandia": {
-          "boutique": ["Hotel Casa Filandia", "Posada de Filandia", "Casa Colonial Filandia"],
-          "finca_cafetera": ["Finca Hotel El Placer", "Hacienda La Virginia", "Finca Los Arrayanes"],
-          "hostel": ["Filandia Hostel", "Casa de la Cultura", "Backpacker Filandia"]
-        },
-        "Montenegro": {
-          "4_star": ["Hotel Montenegro", "Casa Hotel Montenegro", "Hotel Parque del Café"],
-          "finca_cafetera": ["Hacienda Combia", "Finca La Pradera", "Recuca Finca Hotel"]
-        },
-        
-        // PARQUES TEMÁTICOS
-        "Parque del Café": {
-          "resort": ["Hotel Parque del Café", "Resort Campestre", "Hotel Temático"],
-          "finca_cafetera": ["Recuca", "Hacienda Combia", "Finca Villa Martha"]
-        },
-        
-        // FALLBACK GENERAL
-        default: ["Competitor A", "Competitor B", "Competitor C"]
+        "Cartagena": {
+          "5_star": ["Hotel Charleston Cartagena", "Sofitel Legend Santa Clara", "Hotel Casa San Agustín"],
+          "4_star": ["Hotel Estelar Cartagena", "Hotel Capilla del Mar", "Hotel Las Américas"],
+          "boutique": ["Hotel Casa del Curato", "Ananda Hotel Boutique", "Hotel Casa Lola"]
+        }
       };
       
-      return competitiveSets[location]?.[hotelType] || competitiveSets[location]?.["4_star"] || competitiveSets.default;
+      return competitiveSets[location]?.[hotelType] || ["Competitor A", "Competitor B", "Competitor C"];
     };
 
     // GENERAR SEGMENTACIÓN DE MERCADO DINÁMICA
@@ -426,17 +375,17 @@ async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 
             groups: { share: 15, adr: adjustedADR * 0.80, booking_window: 45, growth_trend: "+2%" },
             packages: { share: 100 - corporateShare - 60, adr: adjustedADR * 1.15, booking_window: 21, growth_trend: "+18%" }
           };
-        case "experiential":
-          return {
-            coffee_tourism: { share: 60, adr: adjustedADR * 1.15, booking_window: 21, growth_trend: "+25%" },
-            nature_lovers: { share: 25, adr: adjustedADR * 1.05, booking_window: 18, growth_trend: "+18%" },
-            cultural_tourism: { share: 15, adr: adjustedADR * 0.95, booking_window: 14, growth_trend: "+12%" }
-          };
         case "budget":
           return {
             backpackers: { share: 60, adr: adjustedADR * 1.0, booking_window: 7, growth_trend: "+25%" },
             budget_travelers: { share: 25, adr: adjustedADR * 1.1, booking_window: 14, growth_trend: "+15%" },
             groups: { share: 15, adr: adjustedADR * 0.90, booking_window: 21, growth_trend: "+8%" }
+          };
+        case "experiential":
+          return {
+            coffee_tourism: { share: 60, adr: adjustedADR * 1.15, booking_window: 21, growth_trend: "+25%" },
+            nature_lovers: { share: 25, adr: adjustedADR * 1.05, booking_window: 18, growth_trend: "+18%" },
+            cultural_tourism: { share: 15, adr: adjustedADR * 0.95, booking_window: 14, growth_trend: "+12%" }
           };
         default:
           return {
@@ -584,14 +533,14 @@ async function getHotelDataIntelligence(location, hotelType = "4_star", rooms = 
   }, 'hotel_data_intelligence');
 }
 
-// 9. ARIMA FORECASTING - OPTIMIZADO PARA ESTACIONALIDAD EXTREMA EJE CAFETERO COMPLETO - PROTEGIDA
+// 9. ARIMA FORECASTING - OPTIMIZADO PARA ESTACIONALIDAD EXTREMA CAFETERA - PROTEGIDA
 async function getARIMAForecasting(location, hotelType, rooms, historicalData = null) {
   return await circuitBreakers.mcp_tools.call(async () => {
     rateLimiter(); // Rate limiting
     
     safeLog('ARIMA Forecasting iniciado', { location, hotelType, rooms });
     
-    // DETECCIÓN EXPANDIDA EJE CAFETERO COMPLETO
+    // CAMBIO 1: DETECCIÓN EXPANDIDA EJE CAFETERO
     const isColombianCoffeeRegion = location.toLowerCase().includes("salento") || 
                                    location.toLowerCase().includes("armenia") || 
                                    location.toLowerCase().includes("quindio") ||
@@ -599,20 +548,6 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
                                    location.toLowerCase().includes("manizales") ||
                                    location.toLowerCase().includes("montenegro") ||
                                    location.toLowerCase().includes("filandia") ||
-                                   location.toLowerCase().includes("circasia") ||
-                                   location.toLowerCase().includes("calarca") ||
-                                   location.toLowerCase().includes("la tebaida") ||
-                                   location.toLowerCase().includes("dosquebradas") ||
-                                   location.toLowerCase().includes("santa rosa") ||
-                                   location.toLowerCase().includes("marsella") ||
-                                   location.toLowerCase().includes("belen de umbria") ||
-                                   location.toLowerCase().includes("chinchina") ||
-                                   location.toLowerCase().includes("palestina") ||
-                                   location.toLowerCase().includes("villamaria") ||
-                                   location.toLowerCase().includes("neira") ||
-                                   location.toLowerCase().includes("parque del cafe") ||
-                                   location.toLowerCase().includes("panaca") ||
-                                   location.toLowerCase().includes("recuca") ||
                                    location.toLowerCase().includes("colombia");
     
     // Datos históricos con estacionalidad extrema para región cafetera
@@ -624,7 +559,7 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
         let baseOccupancy = 45; // Base muy baja para región cafetera
         
         if (isColombianCoffeeRegion) {
-          // TEMPORADAS EXTREMAS ESPECÍFICAS EJE CAFETERO COMPLETO
+          // TEMPORADAS EXTREMAS ESPECÍFICAS REGIÓN CAFETERA
           
           // TEMPORADA ALTA (ocupación 80-95%)
           if ((dayOfYear >= 350 || dayOfYear <= 31) || // Dic-Ene (Festival del Café + vacaciones)
@@ -688,7 +623,7 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
         currentDate.setDate(currentDate.getDate() + i);
         const dayOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
         
-        // LÓGICA ESPECÍFICA EJE CAFETERO COMPLETO
+        // LÓGICA ESPECÍFICA REGIÓN CAFETERA
         let seasonalMultiplier = 1.0;
         let seasonType = "LOW";
         
@@ -763,7 +698,7 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
       if (occ > 80) highOccupancyPeriods.push(index + 1);
     });
 
-    // Base ADR por región y tipo - EXPANDIDO PARA FINCA CAFETERA
+    // Base ADR por región y tipo
     const baseADR = isColombianCoffeeRegion ? 
       (hotelType === "hostel" ? 180000 : 
        hotelType === "5_star" ? 450000 : 
@@ -805,7 +740,7 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
       };
     });
 
-    // ESTRATEGIAS ESPECÍFICAS PARA TEMPORADA BAJA EJE CAFETERO
+    // ESTRATEGIAS ESPECÍFICAS PARA TEMPORADA BAJA
     const lowSeasonStrategies = {
       pricing_tactics: [
         "Rates supervivencia: -30% a -40% vs temporada alta",
@@ -818,14 +753,14 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
         "Target mercado doméstico colombiano vs internacional",
         "Corporate retreats y team buildings",
         "Wellness packages y digital detox experiences",
-        "Educational tours con universidades y colegios"
+        "Educational tours con universidades"
       ],
       
       operational_adjustments: [
         "Reducir staff operativo 40-50%",
-        "Cerrar secciones del alojamiento si necesario",
+        "Cerrar secciones del hotel si necesario",
         "Focus en direct bookings para evitar comisiones",
-        "Partnerships con otros alojamientos locales para overflow"
+        "Partnerships con hostales locales para overflow"
       ],
       
       demand_generation: [
@@ -849,8 +784,7 @@ async function getARIMAForecasting(location, hotelType, rooms, historicalData = 
       forecast_summary: {
         model_type: "ARIMA - Extreme Seasonality Coffee Region Specialized",
         location: location,
-        coffee_region_detected: isColombianCoffeeRegion,
-        extreme_seasonality_detected: isColombianCoffeeRegion,
+        extreme_seasonality_detected: true,
         high_season_days: highOccupancyPeriods.length,
         low_season_days: lowOccupancyPeriods.length,
         critical_survival_days: criticalPeriods.length,
@@ -1725,7 +1659,6 @@ app.post('/stream', async (req, res) => {
         
         arimaReport += `🎯 **Resumen Forecast Anual:**\n`;
         arimaReport += `- Ubicación: ${arimaData.forecast_summary.location}\n`;
-        arimaReport += `- Región cafetera detectada: ${arimaData.forecast_summary.coffee_region_detected ? 'SÍ - Eje Cafetero Colombiano' : 'No'}\n`;
         arimaReport += `- Estacionalidad extrema: ${arimaData.forecast_summary.extreme_seasonality_detected ? 'SÍ - Región Cafetera' : 'No'}\n`;
         arimaReport += `- Días temporada alta próximos 30: ${arimaData.forecast_summary.high_season_days}\n`;
         arimaReport += `- Días temporada baja próximos 30: ${arimaData.forecast_summary.low_season_days}\n`;
@@ -1787,4 +1720,74 @@ app.post('/stream', async (req, res) => {
           result: {
             content: [{
               type: 'text',
-              text: `❌ Error en ARIMA forecasting: ${error.message}\
+              text: `❌ Error en ARIMA forecasting: ${error.message}\n🔒 Sistema protegido - reintenta en unos segundos si persiste el problema.`
+            }]
+          }
+        });
+      }
+    } else {
+      // Unknown tool
+      console.log(`Unknown tool: ${toolName}`);
+      res.json({
+        jsonrpc: '2.0',
+        id: request.id,
+        error: {
+          code: -32601,
+          message: `Herramienta no soportada: ${toolName}`
+        }
+      });
+    }
+  } else {
+    // Unknown method
+    console.log(`Unknown method: ${request.method}`);
+    res.json({
+      jsonrpc: '2.0',
+      id: request.id,
+      error: {
+        code: -32601,
+        message: `Método no soportado: ${request.method}`
+      }
+    });
+  }
+});
+
+// Root endpoint - Server status
+app.get('/', (req, res) => {
+  res.json({
+    status: 'Revenue Intelligence MCP Server v3.0 - HTTP Streamable Ready!',
+    endpoints: {
+      stream: '/stream (HTTP Streamable)',
+      tools: [
+        'web_search - Multi-engine web search',
+        'analyze_text - Text analysis and insights', 
+        'generate_content - Content creation',
+        'schedule_reminder - Task and reminder management',
+        'data_processor - Data transformation utilities',
+        'weather_intelligence - Weather impact analysis',
+        'events_intelligence - Event calendar optimization',
+        'hotel_data_intelligence - Dynamic hotel operational data and revenue management insights',
+        'arima_forecasting - ARIMA demand forecasting and pricing optimization for extreme seasonality coffee region'
+      ]
+    },
+    version: '3.0.0',
+    protocol: 'MCP HTTP Streamable'
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Start server
+app.listen(port, () => {
+  console.log(`🚀 Revenue Intelligence MCP Server v3.0 running on port ${port}`);
+  console.log(`📡 HTTP Streamable endpoint: /stream`);
+  console.log(`🛠️ Available tools: web_search, analyze_text, generate_content, schedule_reminder, data_processor, weather_intelligence, events_intelligence, hotel_data_intelligence, arima_forecasting`);
+  console.log(`🔍 Brave Search API: ${process.env.BRAVE_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
+  console.log(`🌤️ Weather API: ${process.env.OPENWEATHER_API_KEY ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
+});
