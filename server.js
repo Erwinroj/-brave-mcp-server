@@ -1703,14 +1703,6 @@ app.post('/stream', async (req, res) => {
         });
       }
       
-  } else if (request.method === 'notifications/initialized') {
-    console.log('MCP notifications initialized');
-    res.json({
-      jsonrpc: '2.0',
-      id: request.id,
-      result: {}
-    });
-    
   } else {
     // Unknown method
     console.log(`Unknown method: ${request.method}`);
